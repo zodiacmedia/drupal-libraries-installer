@@ -1,4 +1,11 @@
 # libraries lock file
 /installed-libraries.json
+# ide folders
+/.idea
 # composer artifacts
-/vendor/
+/.phpunit.result.cache
+/composer.lock
+/composer.phar
+/phpunit.xml
+/reports
+/vendor

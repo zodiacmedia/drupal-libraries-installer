@@ -1,0 +1,19 @@
+{
+  "schema-version": "1.0",
+  "installed": {
+    "test-moment": {
+      "version": "1.0.0",
+      "url": "https://assets.example.com/moment-override.zip",
+      "type": "zip",
+      "ignore": [],
+      "package": "drupal-libraries-installer-test/root-package"
+    },
+    "test-library-dependency": {
+      "version": "1.0.0",
+      "url": "https://example.com/test-library-dependency.zip",
+      "type": "zip",
+      "ignore": [],
+      "package": "zodiacmedia/drupal-libraries-test-dependency"
+    }
+  }
+}

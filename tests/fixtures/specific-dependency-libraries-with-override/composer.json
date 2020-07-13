@@ -1,0 +1,16 @@
+{
+    "require": {
+        "zodiacmedia/drupal-libraries-test-dependency": "*@dev"
+    },
+    "extra": {
+        "drupal-libraries-dependencies": [
+            "zodiacmedia/drupal-libraries-test-dependency"
+        ],
+        "drupal-libraries": {
+            "test-moment": {
+                "url": "https://assets.example.com/moment-override.zip",
+                "ignore": []
+            }
+        }
+    }
+}

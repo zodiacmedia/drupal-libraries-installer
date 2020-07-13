@@ -1,0 +1,30 @@
+{
+    "extra": {
+        "drupal-libraries": {
+            "flexslider": {
+                "url": "https://github.com/woocommerce/FlexSlider/archive/2.6.4.zip",
+                "version": "2.6.4",
+                "type": "zip",
+                "ignore": [
+                    "bower_components",
+                    "demo",
+                    "node_modules"
+                ]
+            },
+            "moment": {
+                "url": "https://registry.npmjs.org/moment/-/moment-2.25.0.tgz",
+                "shasum": "e961ab9a5848a1cf2c52b1af4e6c82a8401e7fe9"
+            },
+            "select2": {
+                "url": "https://github.com/select2/select2/archive/4.0.13.zip",
+                "ignore": [
+                    ".*",
+                    "*.{md}",
+                    "Gruntfile.js",
+                    "{docs,src,tests}"
+                ]
+            },
+            "simple-color": "https://github.com/recurser/jquery-simple-color/archive/v1.2.2.zip"
+        }
+    }
+}

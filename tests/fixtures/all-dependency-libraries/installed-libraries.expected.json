@@ -1,0 +1,22 @@
+{
+  "schema-version": "1.0",
+  "installed": {
+    "test-library-dependency": {
+      "version": "1.0.0",
+      "url": "https://example.com/test-library-dependency.zip",
+      "type": "zip",
+      "ignore": [],
+      "package": "zodiacmedia/drupal-libraries-test-dependency"
+    },
+    "test-moment": {
+      "version": "2.25.0",
+      "url": "https://registry.npmjs.org/moment/-/moment-2.25.0.tgz",
+      "type": "tar",
+      "ignore": [
+        "*.md"
+      ],
+      "package": "zodiacmedia/drupal-libraries-test-dependency",
+      "shasum": "e961ab9a5848a1cf2c52b1af4e6c82a8401e7fe9"
+    }
+  }
+}

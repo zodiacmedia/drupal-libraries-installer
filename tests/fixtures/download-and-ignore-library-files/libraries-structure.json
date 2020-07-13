@@ -1,0 +1,55 @@
+{
+  "flexslider": {
+    "bower_components": {
+      ".text.txt": "",
+      "test.php": "",
+      "text.txt": ""
+    },
+    "demo": {
+      "index.html": "",
+      "demo.js": "",
+      "demo.css": "",
+      "Gruntfile.js": ""
+    },
+    "node_modules": {
+      "sub_module1": [],
+      "sub_module2": [],
+      "sub_module3": []
+    },
+    ".hidden.txt": "",
+    "Gruntfile.js": "",
+    "README.md": ""
+  },
+  "moment": {
+    "moment.js": ""
+  },
+  "select2": {
+    ".git": [],
+    ".hidden_directory": [],
+    "directory-with-hidden-file": {
+      ".should-not-be-removed.txt": ""
+    },
+    "docs": {
+      "index.html": "",
+      "readme.md": "",
+      "changes.rst": ""
+    },
+    "empty_directory": [],
+    "src": {
+      "index.js": "",
+      "style.css": "",
+      "index.html": ""
+    },
+    "tests": {
+      "Test.php": "",
+      "test.js": "",
+      "Gruntfile.js": ""
+    },
+    ".hidden.txt": "",
+    "Gruntfile.js": "",
+    "README.md": ""
+  },
+  "simple-color": {
+    "simple-color.js": ""
+  }
+}

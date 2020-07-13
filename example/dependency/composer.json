@@ -1,0 +1,17 @@
+{
+    "name": "zodiacmedia/drupal-libraries-installer-demo-dependency",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "codebymikey",
+            "homepage": "https://www.drupal.org/u/codebymikey"
+        }
+    ],
+    "extra": {
+        "drupal-libraries": {
+            "dependency@flexslider": "https://github.com/woocommerce/FlexSlider/archive/2.6.4.zip",
+            "moment": "https://registry.npmjs.org/moment/-/moment-2.0.0.tgz"
+        }
+    }
+}

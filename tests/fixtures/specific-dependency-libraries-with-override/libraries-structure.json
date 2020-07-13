@@ -1,0 +1,10 @@
+{
+  "test-library-dependency": {
+    "index.js": "",
+    "README.md": ""
+  },
+  "test-moment": {
+    "moment.js": "",
+    "README.md": ""
+  }
+}

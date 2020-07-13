@@ -1,0 +1,12 @@
+{
+  "schema-version": "1.0",
+  "installed": {
+    "simple-color": {
+      "version": "v1.2.2",
+      "url": "https://github.com/recurser/jquery-simple-color/archive/v1.2.2.zip",
+      "type": "zip",
+      "ignore": [],
+      "package": "drupal-libraries-installer-test/root-package"
+    }
+  }
+}

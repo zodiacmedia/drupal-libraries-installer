@@ -1,0 +1,8 @@
+{
+    "require": {
+        "zodiacmedia/drupal-libraries-test-dependency": "*@dev"
+    },
+    "extra": {
+        "drupal-libraries-dependencies": true
+    }
+}

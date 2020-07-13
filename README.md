@@ -10,7 +10,7 @@ external dependencies for a Drupal site in a single place: the `composer.json` f
 1. Add _Drupal Libraries Installer_ to your Drupal site project:
 
     ```sh
-    composer require balbuf/drupal-libraries-installer
+    composer require zodiacmedia/drupal-libraries-installer
     ```
 
 1. Add libraries to your `composer.json` file via the `drupal-libraries` property

@@ -1,0 +1,7 @@
+{
+    "extra": {
+        "drupal-libraries": {
+            "simple-color": "https://github.com/recurser/jquery-simple-color/archive/v1.2.2.zip"
+        }
+    }
+}
