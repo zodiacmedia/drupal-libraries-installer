@@ -1,3 +1,7 @@
+1.2.1 / 2020-07-20
+========================
+* Address a `LogicException` being thrown when the package is uninstalled.
+
 1.2.0 / 2020-07-14
 ========================
 

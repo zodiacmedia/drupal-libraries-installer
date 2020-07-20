@@ -108,7 +108,19 @@ class Plugin implements PluginInterface, EventSubscriberInterface {
   public function install(Event $event) {
     $composer = $event->getComposer();
 
-    $installed_json_file = new JsonFile($this->getInstalledJsonPath(), NULL, $this->io);
+    $installed_json_file_path = $this->getInstalledJsonPath();
+    if ($installed_json_file_path === FALSE) {
+      if ($this->io->isDebug()) {
+        $this->io->write(
+          sprintf(
+            "Could not resolve the '%s' package path. Skipping the installer processing.",
+            static::PACKAGE_NAME
+          )
+        );
+      }
+      return;
+    }
+    $installed_json_file = new JsonFile($installed_json_file_path, NULL, $this->io);
 
     $installed = NULL;
     if ($installed_json_file->exists()) {
@@ -411,13 +423,11 @@ class Plugin implements PluginInterface, EventSubscriberInterface {
   /**
    * Get the current installed-libraries json file path.
    *
-   * @return string
-   *   The installed libraries json lock file path.
+   * @return string|false
+   *   The installed libraries json lock file path or FALSE if the package
+   *   could not be resolved.
    */
   public function getInstalledJsonPath() {
-    // Alternative approach.
-    /*$installed_json_file = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'installed-libraries.json';*/
-
     /** @var \Composer\Package\CompletePackage $installer_library_package */
     $installer_library_package = $this->composer->getRepositoryManager()->getLocalRepository()->findPackage(
       static::PACKAGE_NAME,
@@ -425,8 +435,9 @@ class Plugin implements PluginInterface, EventSubscriberInterface {
     );
 
     if (!$installer_library_package || !$installer_library_package instanceof CompletePackage) {
-      // This should never happen.
-      throw new \LogicException('Could not resolve the %s package!', static::PACKAGE_NAME);
+      // Could not resolve the package. The package is most likely being
+      // uninstalled.
+      return FALSE;
     }
 
     return $this->installationManager->getInstallPath($installer_library_package) . '/installed-libraries.json';
