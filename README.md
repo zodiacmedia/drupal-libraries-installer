@@ -57,12 +57,15 @@ If the file is not a ZIP file, then the URL must end with the file extension:
                          "*.{md}",
                          "Gruntfile.js",
                          "{docs,src,tests}"
-                     ]
+                     ],
+                     "rename": {
+                         "dist": "build"                  
+                     }                   
                 },
                 "custom-tar-asset": {
-                    "url": "https://assets.custom-url.com/unconventional/url/path",
-                    "type": "tar",
-                    "ignore": [".*", "*.{txt,md}"]
+                     "url": "https://assets.custom-url.com/unconventional/url/path",
+                     "type": "tar",
+                     "ignore": [".*", "*.{txt,md}"]
                 }
             }
         }
@@ -74,6 +77,7 @@ If the file is not a ZIP file, then the URL must end with the file extension:
    - `version`: The version of the library (defaults to `1.0.0`).
    - `type`: The type of library archive, one of (zip, tar, rar, gzip), support depends on your composer version (defaults to `zip`). 
    - `ignore`: Array of folders/file globs to remove from the library (defaults to `[]`). See [PSA-2011-002](https://www.drupal.org/node/1189632).
+   - `rename`: Object mapping of folders/files to rename to fit a certain folder structure (optional).
    - `shasum`: The SHA1 hash of the asset (optional).
 
     _See below for how to find the ZIP URL for a GitHub repo._
@@ -170,11 +174,47 @@ desired link to use within your `composer.json` file.
 If the library does not provide any releases, you can still reference it in ZIP file form.
 The downside is that any time you download this ZIP, the contents may change based on the
 state of the repo. There is no guarantee that separate users of the project will have the
-exact same version of the library.
+exact same version of the library. To mitigate against this issue, you should
+always download a specific commit version rather than from a branch like `master`.
 
 1. Click the green `Clone or download` button on the repo's home page.
 
 1. Copy the URL for the `Download ZIP` link to use within your `composer.json` file.
+
+### Library definitions with namespaces
+
+If a library includes a vendor namespace, then its internal package name
+will be prefixed with a `drupal-library_` e.g. `vendor/library` becomes
+`drupal-library_vendor/library`, which in turn allows you to add a
+custom installer option like the following to manage where it's downloaded:
+```json5
+{
+  // composer.json
+  "extra": {
+    "installer-paths": {
+      // Custom installer path entry to store them all under the same folder.
+      "web/libraries/myvendor/{$name}": [
+        "vendor:drupal-library_ckeditor"
+      ],
+      "web/libraries/{$name}/": [
+        "type:drupal-library"
+      ]
+    },
+    "drupal-libraries": {
+      "myvendor/package1": "https://download.myvendor.com/package1-1.0.0.zip",
+      "myvendor/package2": "https://download.myvendor.com/package2-1.4.0.zip"
+    }
+  },
+}
+```
+
+Otherwise the files will be stored in `web/libraries/myvendor` by default and
+will overwrite each other.
+
+**NB**: The order of the `installer-paths` matters.
+
+The justification behind the prefix is to avoid any potential collision with
+normal composer packages.
 
 ## Notes
 

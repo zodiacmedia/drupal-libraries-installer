@@ -1,0 +1,14 @@
+{
+  "select2": {
+    ".git": [],
+    "empty_directory": [],
+    "dist": {
+      "index.js": "",
+      "style.css": "",
+      "index.html": ""
+    },
+    "README.md": "",
+    "LICENSE.md": "",
+    "select2.js": ""
+  }
+}

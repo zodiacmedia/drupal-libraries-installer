@@ -1,0 +1,21 @@
+{
+  "schema-version": "1.1",
+  "installed": {
+    "select2": {
+      "version": "4.0.13",
+      "url": "https://github.com/select2/select2/archive/4.0.13.zip",
+      "type": "zip",
+      "ignore": [
+        ".*"
+      ],
+      "rename": {
+        "dist": "build",
+        "empty_directory": "../../../../../../../../moved-outside-library-directory",
+        "LICENSE.md": "README.md",
+        "select2.js": "index.js",
+        "non-existent": "ignored"
+      },
+      "package": "drupal-libraries-installer-test/root-package"
+    }
+  }
+}

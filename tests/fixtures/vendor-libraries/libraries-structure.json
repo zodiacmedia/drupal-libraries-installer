@@ -1,0 +1,16 @@
+{
+  "ckeditor": {
+    "codesnippet": {
+      "codesnippet.js": ""
+    },
+    "contents": {
+      "contents.js": ""
+    },
+    "notification": {
+      "notification.js": ""
+    },
+    "wordcount": {
+      "wordcount.js": ""
+    }
+  }
+}

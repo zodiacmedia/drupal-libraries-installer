@@ -262,6 +262,7 @@ EOL
       [
         ScriptEvents::POST_INSTALL_CMD => 'install',
         ScriptEvents::POST_UPDATE_CMD => 'install',
+        InstallLibrariesEvent::INSTALL_LIBRARIES => 'install',
       ],
       Plugin::getSubscribedEvents()
     );
@@ -416,6 +417,51 @@ EOL
   }
 
   /**
+   * Test that a library's assets may be renamed to fit a directory structure.
+   *
+   * Given a library with a "rename" definition.
+   * When the plugin is run
+   * Then the files will be renamed.
+   */
+  public function testRenameLibraryAsset() {
+    $this->testDrupalLibrariesDownload(
+      'rename-library',
+      [
+        'select2/.git',
+      ],
+      [
+        'select2',
+      ]
+    );
+    $expected_library_structure_file = "{$this->fixtureDirectory}/libraries-structure-expected.json";
+    $this->assertFileExists($expected_library_structure_file);
+    $expected_library_structure = json_decode(file_get_contents($expected_library_structure_file), TRUE);
+    $library_structure = $this->getLibraryStructure();
+    $this->assertSame($expected_library_structure, $library_structure);
+  }
+
+  /**
+   * Test that library vendors are installed to a custom location.
+   *
+   * Given a project with a vendor namespace and a custom install path.
+   * When the plugin is run
+   * Then the package library is installed inside it.
+   */
+  public function testLibraryVendors() {
+    $this->testDrupalLibrariesDownload(
+      'vendor-libraries',
+      [],
+      [
+        'libraryname',
+        'ckeditor-path/codesnippet',
+        'ckeditor-path/contents',
+        'ckeditor-path/notification',
+        'ckeditor-path/wordcount',
+      ]
+    );
+  }
+
+  /**
    * Returns the mock plugin fixture instance.
    */
   protected function getPluginMockInstance() {
@@ -524,20 +570,59 @@ EOL
   /**
    * Returns the composer package directory path.
    *
-   * It also declares a bunch of files for the globs to match.
-   *
    * @param \Composer\Package\Package $package
    *   The composer package.
    *
    * @return string
    *   The install path.
+   *
+   * @see \Composer\Installers\BaseInstaller::getInstallPath
    */
   public function getInstallPathCallback(Package $package): string {
-    $name = explode('/', $package->getName())[1];
+    $pretty_name = $package->getPrettyName();
+    if (strpos($pretty_name, '/') !== FALSE) {
+      [$vendor, $name] = explode('/', $pretty_name);
+    }
+    else {
+      $vendor = '';
+      $name = $pretty_name;
+    }
+
+    // Use the package name as the destination by default.
+    $package_path = $name;
+    if (strpos($vendor, 'drupal-library_') === 0) {
+      $extra = $this->composer->getPackage()->getExtra();
+      if (!empty($extra['installer-paths'])) {
+        $type = $package->getType();
+        foreach ($extra['installer-paths'] as $pattern => $paths) {
+          if (in_array("vendor:$vendor", $paths, TRUE)) {
+            $package_path = str_replace(
+              ['{$name}', '{$vendor}', '{$type}'],
+              [$name, $vendor, $type],
+              $pattern
+            );
+          }
+        }
+      }
+    }
 
     return vfsStream::url(
-      $this->rootDirectory->path() . '/' . static::LIBRARIES_DIRECTORY . '/' . $name
+      $this->rootDirectory->path() . '/' . static::LIBRARIES_DIRECTORY . '/' . $package_path
     );
+  }
+
+  /**
+   * Get the libraries structure.
+   *
+   * @return array
+   *   The library structure.
+   */
+  public function getLibraryStructure() {
+    $library_path = vfsStream::url($this->rootDirectory->path() . '/' . static::LIBRARIES_DIRECTORY);
+    if (file_exists($library_path)) {
+      return $this->generateDirectoryTreeStructure($library_path);
+    }
+    return [];
   }
 
   /**
@@ -595,6 +680,54 @@ EOL
         ),
       ]
     );
+  }
+
+  /**
+   * Creates a tree-structured array of directories and files.
+   *
+   * Adapted from: https://gist.github.com/jasonhofer/2368606
+   *
+   * @param string $dir
+   *   Directory to scan.
+   * @param string $regex
+   *   Regex to use to filter the directory tree.
+   * @param bool $ignore_empty
+   *   Do not add empty directories to the tree.
+   *
+   * @return array
+   *   The directory tree structure.
+   */
+  protected function generateDirectoryTreeStructure(
+    $dir,
+    $regex = '',
+    $ignore_empty = FALSE
+  ) {
+    $structure = [];
+
+    if (!$dir instanceof \DirectoryIterator) {
+      $dir = new \DirectoryIterator((string) $dir);
+    }
+
+    foreach ($dir as $node) {
+      if ($node->isDir() && !$node->isDot()) {
+        $tree = $this->generateDirectoryTreeStructure(
+          $node->getPathname(),
+          $regex,
+          $ignore_empty
+        );
+        if (!$ignore_empty || count($tree)) {
+          $structure[$node->getFilename()] = $tree;
+        }
+      }
+      elseif ($node->isFile()) {
+        $name = $node->getFilename();
+        if ('' === $regex || preg_match($regex, $name)) {
+          $structure[$name] = TRUE;
+        }
+      }
+    }
+
+    return $structure;
   }
 
 }

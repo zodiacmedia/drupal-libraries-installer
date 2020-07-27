@@ -9,24 +9,26 @@ use Composer\Json\JsonFile;
 use Composer\Package\CompletePackage;
 use Composer\Package\Package;
 use Composer\Package\PackageInterface;
+use Composer\Plugin\Capable;
 use Composer\Plugin\PluginInterface;
 use Composer\Script\Event;
 use Composer\Script\ScriptEvents;
 use Composer\Util\Filesystem;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\Glob;
+use Composer\Plugin\Capability\CommandProvider;
 
 /**
  * The Drupal libraries installer plugin.
  */
-class Plugin implements PluginInterface, EventSubscriberInterface {
+class Plugin implements PluginInterface, Capable, EventSubscriberInterface {
 
   /**
    * The installed-libraries.json lock file schema version.
    *
    * @var string
    */
-  const SCHEMA_VERSION = '1.0';
+  const SCHEMA_VERSION = '1.1';
 
   /**
    * The composer package name.
@@ -94,14 +96,24 @@ class Plugin implements PluginInterface, EventSubscriberInterface {
     return [
       ScriptEvents::POST_INSTALL_CMD => 'install',
       ScriptEvents::POST_UPDATE_CMD => 'install',
+      InstallLibrariesEvent::INSTALL_LIBRARIES => 'install',
+    ];
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function getCapabilities() {
+    return [
+      CommandProvider::class => PluginCommandProvider::class,
     ];
   }
 
   /**
    * Upon running composer install or update, install the drupal libraries.
    *
-   * @param \Composer\Script\Event $event
-   *   The composer install/update event.
+   * @param \Composer\Script\Event|\Zodiacmedia\DrupalLibrariesInstaller\InstallLibrariesEvent $event
+   *   The composer install/update/install-drupal-libraries event.
    *
    * @throws \Exception
    */
@@ -209,6 +221,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface {
     // Install each library.
     foreach ($extra['drupal-libraries'] as $library => $library_definition) {
       $ignore_patterns = [];
+      $rename = [];
       $sha1checksum = NULL;
       if (is_string($library_definition)) {
         // Simple format.
@@ -224,6 +237,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface {
         $version = $library_definition['version'] ?? $version;
         $distribution_type = $library_definition['type'] ?? $distribution_type;
         $ignore_patterns = $library_definition['ignore'] ?? $ignore_patterns;
+        $rename = $library_definition['rename'] ?? $rename;
         $sha1checksum = $library_definition['shasum'] ?? $sha1checksum;
       }
 
@@ -251,8 +265,12 @@ class Plugin implements PluginInterface, EventSubscriberInterface {
           'url' => $url,
           'type' => $distribution_type,
           'ignore' => $ignore_patterns,
+          'rename' => $rename,
           'package' => $package->getName(),
         ];
+        if (empty($rename)) {
+          unset($applied_library['rename']);
+        }
         if (isset($sha1checksum)) {
           $applied_library['shasum'] = $sha1checksum;
         }
@@ -294,6 +312,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface {
       $library_package = $this->getLibraryPackage($library_name, $processed_library);
 
       $ignore_patterns = $processed_library['ignore'];
+      $rename = $processed_library['rename'] ?? NULL;
       $install_path = $this->installationManager->getInstallPath($library_package);
       if (
         (
@@ -306,7 +325,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface {
         // - wasn't in the lock file.
         // - doesn't match what is in the lock file.
         // - doesn't exist on disk.
-        $this->downloadPackage($library_package, $install_path, $ignore_patterns);
+        $this->downloadPackage($library_package, $install_path, $ignore_patterns, $rename);
       }
     }
   }
@@ -320,8 +339,10 @@ class Plugin implements PluginInterface, EventSubscriberInterface {
    *   The package install path.
    * @param array $ignore_patterns
    *   File patterns to ignore.
+   * @param array|null $rename
+   *   Array mapping of files/folders to rename.
    */
-  protected function downloadPackage(Package $library_package, $install_path, array $ignore_patterns) {
+  protected function downloadPackage(Package $library_package, $install_path, array $ignore_patterns, array $rename = NULL) {
     // Let composer download and unpack the library for us!
     $this->downloadManager->download($library_package, $install_path);
 
@@ -364,6 +385,30 @@ class Plugin implements PluginInterface, EventSubscriberInterface {
         $this->fileSystem->remove($file_pathname);
       }
     }
+
+    if ($rename) {
+      foreach ($rename as $original_file => $destination_file) {
+        $original_file = $this->fileSystem->normalizePath("$install_path/$original_file");
+        $destination_file = $this->fileSystem->normalizePath("$install_path/$destination_file");
+        if (strpos($original_file, $install_path) !== 0) {
+          $this->io->writeError("    - Could not rename <info>$original_file</info> as it is outside the library directory.");
+        }
+        elseif (strpos($destination_file, $install_path) !== 0) {
+          $this->io->writeError("    - Could not rename <info>$destination_file</info> as it is outside the library directory.");
+        }
+        elseif (!file_exists($original_file)) {
+          $this->io->writeError("    - Could not rename <info>$original_file</info> as it does not exist");
+        }
+        elseif (file_exists($destination_file)) {
+          $this->io->writeError("    - Could not rename <info>$original_file</info> as the destination file <info>$destination_file</info> already exists");
+        }
+        else {
+          $this->io->writeError("    - Renaming <info>$original_file</info> to <info>$destination_file</info>");
+          // Attempt to move the file over.
+          $this->fileSystem->rename($original_file, $destination_file);
+        }
+      }
+    }
   }
 
   /**
@@ -378,7 +423,15 @@ class Plugin implements PluginInterface, EventSubscriberInterface {
    *   The pseudo-package for the library.
    */
   protected function getLibraryPackage($library_name, array $library_definition) {
-    $library_package_name = 'drupal-library/' . $library_name;
+    if (strpos($library_name, '/')) {
+      // The library name already contains a '/', add the "drupal-library_"
+      // prefix to it so that it can be configured to a custom path through its
+      // vendor name.
+      $library_package_name = "drupal-library_$library_name";
+    }
+    else {
+      $library_package_name = 'drupal-library/' . $library_name;
+    }
     $library_package = new Package(
       $library_package_name, $library_definition['version'], $library_definition['version']
     );

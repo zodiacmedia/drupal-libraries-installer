@@ -1,3 +1,11 @@
+1.3.0 / 2020-07-27
+========================
+* Add a `rename` property to the library definition, providing the ability to
+    rename a library asset to match a particular folder pattern.
+* Add support for libraries with vendor namespaces like [ckeditor][ckeditor-downloads].
+* Add a convenience `install-drupal-libraries` composer command. It typically
+    requires your composer dependencies to have already been resolved.
+
 1.2.0 / 2020-07-20
 ========================
 * Address a `LogicException` being thrown when the package is uninstalled.
@@ -25,3 +33,5 @@ definition for supporting:
 1.0.0 / 2018-01-25 
 ========================
 * Initial MVP plugin.
+
+[ckeditor-downloads]: https://github.com/balbuf/drupal-libraries-installer/issues/6

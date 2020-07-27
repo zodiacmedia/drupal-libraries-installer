@@ -1,0 +1,16 @@
+{
+  "extra": {
+    "installer-paths": {
+      "ckeditor-path/{$name}": [
+        "vendor:drupal-library_ckeditor"
+      ]
+    },
+    "drupal-libraries": {
+      "vendor-namespace/libraryname": "https://example.com/package.zip",
+      "ckeditor/codesnippet": "https://download.ckeditor.com/codesnippet/releases/codesnippet_4.9.2.zip",
+      "ckeditor/contents": "https://download.ckeditor.com/contents/releases/contents_0.11.zip",
+      "ckeditor/notification": "https://download.ckeditor.com/notification/releases/notification_4.10.0.zip",
+      "ckeditor/wordcount": "https://download.ckeditor.com/wordcount/releases/wordcount_1.17.2.zip"
+    }
+  }
+}

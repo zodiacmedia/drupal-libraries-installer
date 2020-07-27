@@ -1,0 +1,14 @@
+{
+  "select2": {
+    ".git": [],
+    "empty_directory": [],
+    "README.md": true,
+    "LICENSE.md": true,
+    "build": {
+      "index.js": true,
+      "style.css": true,
+      "index.html": true
+    },
+    "index.js": true
+  }
+}

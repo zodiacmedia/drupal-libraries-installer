@@ -1,0 +1,19 @@
+{
+    "extra": {
+        "drupal-libraries": {
+            "select2": {
+                "url": "https://github.com/select2/select2/archive/4.0.13.zip",
+                "ignore": [
+                    ".*"
+                ],
+                "rename": {
+                    "dist": "build",
+                    "empty_directory": "../../../../../../../../moved-outside-library-directory",
+                    "LICENSE.md": "README.md",
+                    "select2.js": "index.js",
+                    "non-existent": "ignored"
+                }
+            }
+        }
+    }
+}
