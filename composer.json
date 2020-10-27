@@ -1,5 +1,5 @@
 {
-    "name": "TEStudio/drupal-libraries-installer",
+    "name": "testudio/drupal-libraries-installer",
     "description": "Install Drupal libraries via a simple listing in your composer.json file",
     "type": "composer-plugin",
     "license": "MIT",
