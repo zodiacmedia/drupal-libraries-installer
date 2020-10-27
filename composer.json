@@ -1,5 +1,5 @@
 {
-    "name": "zodiacmedia/drupal-libraries-installer",
+    "name": "TEStudio/drupal-libraries-installer",
     "description": "Install Drupal libraries via a simple listing in your composer.json file",
     "type": "composer-plugin",
     "license": "MIT",
@@ -11,10 +11,14 @@
         {
             "name": "codebymikey",
             "homepage": "https://www.drupal.org/u/codebymikey"
+        },
+        {
+            "name": "Vladimir Roudakov",
+            "homepage": "https://github.com/VladimirAus"
         }
     ],
     "support": {
-        "issues": "https://github.com/zodiacmedia/drupal-libraries-installer/issues"
+        "issues": "https://github.com/TEStudio/drupal-libraries-installer/issues"
     },
     "autoload": {
         "psr-4": {
@@ -35,12 +39,12 @@
         "coverage:report": "phpunit --log-junit=reports/unitreport.xml --coverage-text --coverage-html=reports/coverage --coverage-clover=reports/coverage.xml"
     },
     "require": {
-        "composer-plugin-api": "^1.0",
+        "composer-plugin-api": "^1.0 | ^2.0",
         "composer/installers": "^1.1",
-        "php": ">=7.2.0"
+        "php": ">=7.3.0"
     },
     "require-dev": {
-        "composer/composer": "^1.10",
+        "composer/composer": "^1.10 | ^2.0",
         "mikey179/vfsstream": "^1.6",
         "phpunit/phpunit": "^8.5",
         "ext-json": "*"
