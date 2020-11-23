@@ -35,12 +35,12 @@
         "coverage:report": "phpunit --log-junit=reports/unitreport.xml --coverage-text --coverage-html=reports/coverage --coverage-clover=reports/coverage.xml"
     },
     "require": {
-        "composer-plugin-api": "^1.0",
+        "composer-plugin-api": "^1.0 || ^2.0",
         "composer/installers": "^1.1",
         "php": ">=7.2.0"
     },
     "require-dev": {
-        "composer/composer": "^1.10",
+        "composer/composer": "^2.0",
         "mikey179/vfsstream": "^1.6",
         "phpunit/phpunit": "^8.5",
         "ext-json": "*"

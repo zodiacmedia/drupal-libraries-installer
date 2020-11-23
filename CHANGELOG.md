@@ -1,3 +1,7 @@
+1.4.0 / 2020-11-23
+========================
+* Add Composer 2 support.
+
 1.3.0 / 2020-07-27
 ========================
 * Add a `rename` property to the library definition, providing the ability to

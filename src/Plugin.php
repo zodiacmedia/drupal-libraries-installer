@@ -14,6 +14,7 @@ use Composer\Plugin\PluginInterface;
 use Composer\Script\Event;
 use Composer\Script\ScriptEvents;
 use Composer\Util\Filesystem;
+use React\Promise\PromiseInterface;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\Glob;
 use Composer\Plugin\Capability\CommandProvider;
@@ -343,72 +344,84 @@ class Plugin implements PluginInterface, Capable, EventSubscriberInterface {
    *   Array mapping of files/folders to rename.
    */
   protected function downloadPackage(Package $library_package, $install_path, array $ignore_patterns, array $rename = NULL) {
-    // Let composer download and unpack the library for us!
-    $this->downloadManager->download($library_package, $install_path);
+    $process_download = function () use ($install_path, $ignore_patterns, $rename) {
 
-    // Delete files/folders according to the ignore pattern(s).
-    if ($ignore_patterns) {
-      $finder = new Finder();
+      // Delete files/folders according to the ignore pattern(s).
+      if ($ignore_patterns) {
+        $finder = new Finder();
 
-      $patterns = [];
-      foreach ($ignore_patterns as $ignore_pattern) {
-        $patterns[$ignore_pattern] = Glob::toRegex($ignore_pattern);
-      }
+        $patterns = [];
+        foreach ($ignore_patterns as $ignore_pattern) {
+          $patterns[$ignore_pattern] = Glob::toRegex($ignore_pattern);
+        }
 
-      $finder
-        ->in($install_path)
-        ->ignoreDotFiles(FALSE)
-        ->ignoreVCS(FALSE)
-        ->ignoreUnreadableDirs()
-        // Custom filter pattern for matching files and folders.
-        ->filter(
-          function ($file) use ($patterns) {
-            /** @var \SplFileInfo $file */
-            $file_pathname = $file->getRelativePathname();
-            if ('\\' === \DIRECTORY_SEPARATOR) {
-              // Normalize the path name.
-              $file_pathname = str_replace('\\', '/', $file_pathname);
-            }
-            foreach ($patterns as $pattern) {
-              if (preg_match($pattern, $file_pathname)) {
-                return TRUE;
+        $finder
+          ->in($install_path)
+          ->ignoreDotFiles(FALSE)
+          ->ignoreVCS(FALSE)
+          ->ignoreUnreadableDirs()
+          // Custom filter pattern for matching files and folders.
+          ->filter(
+            function ($file) use ($patterns) {
+              /** @var \SplFileInfo $file */
+              $file_pathname = $file->getRelativePathname();
+              if ('\\' === \DIRECTORY_SEPARATOR) {
+                // Normalize the path name.
+                $file_pathname = str_replace('\\', '/', $file_pathname);
               }
+              foreach ($patterns as $pattern) {
+                if (preg_match($pattern, $file_pathname)) {
+                  return TRUE;
+                }
+              }
+
+              return FALSE;
             }
+          );
 
-            return FALSE;
+        foreach ($finder as $file) {
+          $file_pathname = $this->fileSystem->normalizePath($file->getPathname());
+          $this->io->writeError("    - Removing <info>$file_pathname</info>");
+          $this->fileSystem->remove($file_pathname);
+        }
+      }
+
+      if ($rename) {
+        foreach ($rename as $original_file => $destination_file) {
+          $original_file = $this->fileSystem->normalizePath("$install_path/$original_file");
+          $destination_file = $this->fileSystem->normalizePath("$install_path/$destination_file");
+          if (strpos($original_file, $install_path) !== 0) {
+            $this->io->writeError("    - Could not rename <info>$original_file</info> as it is outside the library directory.");
           }
-        );
-
-      foreach ($finder as $file) {
-        $file_pathname = $this->fileSystem->normalizePath($file->getPathname());
-        $this->io->writeError("    - Removing <info>$file_pathname</info>");
-        $this->fileSystem->remove($file_pathname);
-      }
-    }
-
-    if ($rename) {
-      foreach ($rename as $original_file => $destination_file) {
-        $original_file = $this->fileSystem->normalizePath("$install_path/$original_file");
-        $destination_file = $this->fileSystem->normalizePath("$install_path/$destination_file");
-        if (strpos($original_file, $install_path) !== 0) {
-          $this->io->writeError("    - Could not rename <info>$original_file</info> as it is outside the library directory.");
-        }
-        elseif (strpos($destination_file, $install_path) !== 0) {
-          $this->io->writeError("    - Could not rename <info>$destination_file</info> as it is outside the library directory.");
-        }
-        elseif (!file_exists($original_file)) {
-          $this->io->writeError("    - Could not rename <info>$original_file</info> as it does not exist");
-        }
-        elseif (file_exists($destination_file)) {
-          $this->io->writeError("    - Could not rename <info>$original_file</info> as the destination file <info>$destination_file</info> already exists");
-        }
-        else {
-          $this->io->writeError("    - Renaming <info>$original_file</info> to <info>$destination_file</info>");
-          // Attempt to move the file over.
-          $this->fileSystem->rename($original_file, $destination_file);
+          elseif (strpos($destination_file, $install_path) !== 0) {
+            $this->io->writeError("    - Could not rename <info>$destination_file</info> as it is outside the library directory.");
+          }
+          elseif (!file_exists($original_file)) {
+            $this->io->writeError("    - Could not rename <info>$original_file</info> as it does not exist");
+          }
+          elseif (file_exists($destination_file)) {
+            $this->io->writeError("    - Could not rename <info>$original_file</info> as the destination file <info>$destination_file</info> already exists");
+          }
+          else {
+            $this->io->writeError("    - Renaming <info>$original_file</info> to <info>$destination_file</info>");
+            // Attempt to move the file over.
+            $this->fileSystem->rename($original_file, $destination_file);
+          }
         }
       }
+    };
+
+    // Let composer download and unpack the library for us!
+    $promise = $this->downloadManager->download($library_package, $install_path);
+
+    // Composer v2 might return a promise here.
+    if ($promise && $promise instanceof PromiseInterface) {
+      $promise->then($process_download);
+      return;
     }
+
+    // Execute as normal (composer v1, or v2 without async)
+    $process_download();
   }
 
   /**
@@ -494,6 +507,18 @@ class Plugin implements PluginInterface, Capable, EventSubscriberInterface {
     }
 
     return $this->installationManager->getInstallPath($installer_library_package) . '/installed-libraries.json';
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function deactivate(Composer $composer, IOInterface $io) {
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function uninstall(Composer $composer, IOInterface $io) {
   }
 
 }
