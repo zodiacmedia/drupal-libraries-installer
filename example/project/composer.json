@@ -26,6 +26,30 @@
         "zodiacmedia/drupal-libraries-installer": "*@dev",
         "zodiacmedia/drupal-libraries-installer-demo-dependency": "*@dev"
     },
+    "require-dev": {
+        "composer/composer": "^1.10"
+    },
+    "autoload": {
+        "classmap": [
+            "scripts/composer/ScriptHandler.php"
+        ]
+    },
+    "scripts": {
+        "preSymlinkMainProject": "ExampleDrupalLibrariesProject\\composer\\ScriptHandler::preInstall",
+        "symlinkMainProject": "ExampleDrupalLibrariesProject\\composer\\ScriptHandler::postInstall",
+        "pre-install-cmd": [
+            "@preSymlinkMainProject"
+        ],
+        "pre-update-cmd": [
+            "@preSymlinkMainProject"
+        ],
+        "post-install-cmd": [
+            "@symlinkMainProject"
+        ],
+        "post-update-cmd": [
+            "@symlinkMainProject"
+        ]
+    },
     "config": {
         "preferred-install": "source",
         "classmap-authoritative": true,
@@ -33,6 +57,7 @@
         "optimize-autoloader": true
     },
     "extra": {
+        "symlink-root-project": false,
         "installer-paths": {
             "web/libraries/ckeditor/{$name}": [
                 "vendor:drupal-library_ckeditor"
