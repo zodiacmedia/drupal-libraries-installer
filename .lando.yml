@@ -1,0 +1,36 @@
+name: drupal-libaries-installer
+
+services:
+  app: &appserver
+    type: php:7.2
+    via: cli
+    composer_version: 1.10.20
+    xdebug: false
+    overrides:
+      environment:
+        PHP_IDE_CONFIG: "serverName=appserver"
+        XDEBUG_CONFIG: ""
+        XDEBUG_MODE: debug
+    config:
+      php: .php.ini
+  app2:
+    <<: *appserver
+    composer_version: 2
+
+tooling:
+  composer: { service: app, cmd: /app/vendor/bin/composer, description: Run local Composer }
+  composer1: { service: app, cmd: /usr/local/bin/composer, description: Run Composer 1 }
+  composer2: { service: app2, cmd: /usr/local/bin/composer, description: Run Composer 2 }
+
+  xdebug-on:
+    description: Enable xdebug.
+    cmd:
+      - app: &xdebug_on docker-php-ext-enable xdebug 2>/dev/null && pkill -o -USR2 php-fpm && echo "Enabled xdebug"
+      - app2: *xdebug_on
+    user: root
+  xdebug-off:
+    description: Disable xdebug.
+    cmd:
+      - app: &xdebug_off rm -rf /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && pkill -o -USR2 php-fpm && echo "Disabled xdebug"
+      - app2: *xdebug_off
+    user: root
