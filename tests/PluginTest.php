@@ -9,11 +9,13 @@ use Composer\IO\IOInterface;
 use Composer\Package\Link;
 use Composer\Package\Package;
 use Composer\Package\RootPackage;
+use Composer\Plugin\PluginInterface;
 use Composer\Repository\RepositoryManager;
 use Composer\Repository\WritableRepositoryInterface;
 use Composer\Script\Event;
 use Composer\Script\ScriptEvents;
 use Composer\Util\Filesystem;
+use Composer\Util\Loop;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\TestCase;
 
@@ -116,6 +118,8 @@ class PluginTest extends TestCase {
   protected function setUp(): void {
     parent::setUp();
 
+    $composer_2 = version_compare(PluginInterface::PLUGIN_API_VERSION, '2.0', '>=');
+
     $this->downloadedFiles = [];
     $this->removedFiles = [];
 
@@ -145,6 +149,7 @@ class PluginTest extends TestCase {
           'getInstallationManager',
           'getDownloadManager',
           'getRepositoryManager',
+          'getLoop',
         ]
       );
     $this->composer
@@ -167,6 +172,15 @@ class PluginTest extends TestCase {
     $this->composer
       ->method('getRepositoryManager')
       ->willReturn($repository_manager);
+
+    if ($composer_2) {
+      // Add mock for the Composer loop.
+      $loop = $this->createMock(Loop::class);
+      $loop->method('wait');
+      $this->composer
+        ->method('getLoop')
+        ->willReturn($loop);
+    }
 
     $this->io = $this->createMock(IOInterface::class);
 
@@ -317,6 +331,58 @@ EOL
       json_decode(file_get_contents($this->installedLibrariesJsonFile), TRUE),
       'installed-libraries.json output'
     );
+  }
+
+  /**
+   * Fixtures data provider.
+   */
+  public function defaultUrlParserProvider() {
+    return [
+      'url-version-detection' => [
+        'url-version-detection',
+        [
+          'package1' => ['1.0.0', 'zip'],
+          'package2' => ['4.9.2', 'rar'],
+          'package3' => ['0.11', 'tar'],
+          'package4' => ['4.10.0', 'tar'],
+          'package5' => ['1.17.2', 'tar'],
+          'package6' => ['1.0.0', 'zip'],
+          'package7' => ['1.0.0', 'zip'],
+          'package8' => ['1.2.0', 'tar'],
+          'package9' => ['1.2.0', 'tar'],
+        ],
+      ],
+    ];
+  }
+
+  /**
+   * Test default URL parser version detection.
+   *
+   * @param string $fixture_name
+   *   The fixture directory name.
+   * @param array $expected_metadata
+   *   The list of expected parsed metadata.
+   *
+   * @dataProvider defaultUrlParserProvider
+   *
+   * @throws \Exception
+   */
+  public function testDefaultUrlParser(
+    string $fixture_name,
+    array $expected_metadata
+  ) {
+    $this->fixtureDirectory = $this->fixtureDirectory($fixture_name);
+    $root_project = $this->rootFromJson("{$this->fixtureDirectory}/composer.json");
+
+    $this->triggerPlugin($root_project, $this->fixtureDirectory);
+
+    $installed_libraries = json_decode(file_get_contents($this->installedLibrariesJsonFile), TRUE);
+    $output = [];
+    foreach ($installed_libraries['installed'] as $package => $package_metadata) {
+      $output[$package] = [$package_metadata['version'], $package_metadata['type']];
+    }
+    // ksort($expected_metadata); ksort($output);
+    $this->assertEquals($expected_metadata, $output, 'Extracted version and type');
   }
 
   /**

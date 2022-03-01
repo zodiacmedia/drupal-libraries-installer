@@ -44,5 +44,10 @@
         "mikey179/vfsstream": "^1.6",
         "phpunit/phpunit": "^8.5",
         "ext-json": "*"
+    },
+    "config": {
+        "allow-plugins": {
+            "composer/installers": true
+        }
     }
 }

@@ -11,6 +11,7 @@ services:
         PHP_IDE_CONFIG: "serverName=appserver"
         XDEBUG_CONFIG: ""
         XDEBUG_MODE: debug
+        COMPOSER_ALLOW_XDEBUG: 1
     config:
       php: .php.ini
   app2:

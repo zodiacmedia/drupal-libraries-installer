@@ -393,7 +393,7 @@ class Plugin implements PluginInterface, Capable, EventSubscriberInterface {
     $progress = NULL;
     if ($this->io instanceof ConsoleIO && !$this->io->isDebug() && count($promises) > 1 && !getenv('COMPOSER_DISABLE_PROGRESS_BAR')) {
       // Disable progress bar by setting COMPOSER_DISABLE_PROGRESS_BAR=1 as we
-      // are unable to read composer's "--no-input" option easily from here
+      // are unable to read composer's "--no-progress" option easily from here
       // without introducing extra complexity with the PluginEvents::COMMAND
       // event.
       $progress = $this->io->getProgressBar();
@@ -571,7 +571,7 @@ class Plugin implements PluginInterface, Capable, EventSubscriberInterface {
     $distribution_type = 'zip';
     // Attempt to guess the version number and type from the URL.
     $match = [];
-    if (preg_match('/(v?[\d.]{2,})\.(zip|rar|tgz|tar(?:\.(gz|bz2))?)$/', $url, $match)) {
+    if (preg_match('/(v?[\d.]{2,}).+(zip|rar|tgz|tar(?:\.(gz|bz2))?)([?#\/].*)?$/', $url, $match)) {
       $version = $match[1];
       $distribution_type = explode('.', $match[2])[0];
       if ($distribution_type === 'tgz') {

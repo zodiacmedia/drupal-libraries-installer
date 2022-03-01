@@ -1,3 +1,7 @@
+1.x.x / xxxx-xx-xx
+========================
+* Improve support for detecting various versions and archive types.
+
 1.4.1 / 2021-02-22
 ========================
 * Add better Composer 2 support.

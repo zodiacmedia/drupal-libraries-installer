@@ -1,0 +1,15 @@
+{
+  "extra": {
+    "drupal-libraries": {
+      "package1": "https://example.com/package.zip",
+      "package2": "https://example.com/package/package2_4.9.2.rar?_token=123",
+      "package3": "https://example.com/package/package3/contents_0.11.tgz#token_hash",
+      "package4": "https://download.ckeditor.com/notification/releases/notification_4.10.0.tar",
+      "package5": "https://download.ckeditor.com/wordcount/releases/wordcount_1.17.2.tar.bz2",
+      "package6": "https://example.com/dynamic-path",
+      "package7": "https://example.com/dynamic-path.tar.gz/random-auth-token",
+      "package8": "https://example.com/dynamic-path?version=1.2.0.tar.gz",
+      "package9": "https://example.com/dynamic-path?version=1.2.0&type=tgz"
+    }
+  }
+}
