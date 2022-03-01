@@ -1,6 +1,10 @@
 1.x.x / xxxx-xx-xx
 ========================
+
+1.5.0 / 2022-03-01
+========================
 * Improve support for detecting various versions and archive types.
+* [#5](https://github.com/zodiacmedia/drupal-libraries-installer/pull/5) - Support composer/installers version 2.
 
 1.4.1 / 2021-02-22
 ========================
