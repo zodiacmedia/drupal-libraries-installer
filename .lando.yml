@@ -1,4 +1,4 @@
-name: drupal-libaries-installer
+name: drupal-libraries-installer
 
 services:
   app: &appserver
@@ -26,12 +26,12 @@ tooling:
   xdebug-on:
     description: Enable xdebug.
     cmd:
-      - app: &xdebug_on docker-php-ext-enable xdebug 2>/dev/null && pkill -o -USR2 php-fpm && echo "Enabled xdebug"
+      - app: &xdebug_on docker-php-ext-enable xdebug 2>/dev/null && /etc/init.d/apache2 reload && echo "Enabled xdebug"
       - app2: *xdebug_on
     user: root
   xdebug-off:
     description: Disable xdebug.
     cmd:
-      - app: &xdebug_off rm -rf /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && pkill -o -USR2 php-fpm && echo "Disabled xdebug"
+      - app: &xdebug_off rm -rf /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && /etc/init.d/apache2 reload && echo "Disabled xdebug"
       - app2: *xdebug_off
     user: root

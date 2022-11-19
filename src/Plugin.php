@@ -460,7 +460,8 @@ class Plugin implements PluginInterface, Capable, EventSubscriberInterface {
             }
           );
 
-        foreach ($finder as $file) {
+        $files = iterator_to_array($finder->getIterator());
+        foreach ($files as $file) {
           $file_pathname = $this->fileSystem->normalizePath($file->getPathname());
           $this->io->writeError("    - Removing <info>$file_pathname</info>");
           $this->fileSystem->remove($file_pathname);

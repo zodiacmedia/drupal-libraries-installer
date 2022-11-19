@@ -1,5 +1,9 @@
 1.x.x / xxxx-xx-xx
 ========================
+* Address breaking change introduced in `symfony/finder` `^5.4.0 || ^6.0.0` where the `ignoreUnreadableDirs` option no
+  longer allows you to delete files/directories within the same loop.
+
+  See [`commit`](https://github.com/symfony/finder/commit/982b4a1044ec54a2ad55c8001bf66dbdb3e3c4c1).
 
 1.5.0 / 2022-03-01
 ========================

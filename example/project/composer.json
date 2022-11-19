@@ -54,7 +54,11 @@
         "preferred-install": "source",
         "classmap-authoritative": true,
         "prepend-autoloader": false,
-        "optimize-autoloader": true
+        "optimize-autoloader": true,
+        "allow-plugins": {
+            "composer/installers": true,
+            "zodiacmedia/drupal-libraries-installer": true
+        }
     },
     "extra": {
         "symlink-root-project": false,
