@@ -220,6 +220,25 @@ class Plugin implements PluginInterface, Capable, EventSubscriberInterface {
       return $processed_drupal_libraries;
     }
 
+    if ($package->getType() === 'project') {
+      foreach ($extra['drupal-libraries-include'] ?? [] as $include) {
+        if (!preg_match('/composer.libraries.json$/', $include) || !file_exists($include)) {
+          continue;
+        }
+
+        $json = JsonFile::parseJson(@file_get_contents($include), $include);
+        foreach ($json['repositories'] ?? [] as $repository) {
+          $package_type = $repository['package']['type'] ?? '';
+          $package_name = $repository['package']['extra']['installer-name'] ?? $repository['package']['name'] ?? '';
+          $dist = $repository['package']['dist'] ?? NULL;
+          $exists = array_key_exists($package_name, $extra['drupal-libraries']);
+          if (!$exists && $dist && $package_type === 'drupal-library' && substr($package_name, 0, 1) !== '/') {
+            $extra['drupal-libraries'][$package_name] = $dist;
+          }
+        }
+      }
+    }
+
     // Install each library.
     foreach ($extra['drupal-libraries'] as $library => $library_definition) {
       $ignore_patterns = [];
@@ -293,11 +312,20 @@ class Plugin implements PluginInterface, Capable, EventSubscriberInterface {
   protected function removeUnusedLibraries(array $old_libraries) {
     foreach ($old_libraries as $library_name => $library_definition) {
       $library_package = $this->getLibraryPackage($library_name, $library_definition);
+      $install_path = $this->installationManager->getInstallPath($library_package);
+      $vendor = explode('/', $library_name)[0] ?: NULL;
+      $this->composer->getLoop()->wait([
+        $this->downloadManager->remove($library_package, $install_path)->done(function () use ($install_path, $vendor) {
+          if ($vendor === 'libraries' || basename(dirname($install_path)) !== $vendor) {
+            return;
+          }
 
-      $this->downloadManager->remove(
-        $library_package,
-        $this->installationManager->getInstallPath($library_package)
-      );
+          $vendor_dir = dirname($install_path);
+          if (is_dir($vendor_dir) && $this->fileSystem->isDirEmpty($vendor_dir)) {
+            $this->fileSystem->removeDirectory($vendor_dir);
+          }
+        })
+      ]);
     }
   }
 
@@ -552,7 +580,11 @@ class Plugin implements PluginInterface, Capable, EventSubscriberInterface {
       $library_package->setDistSha1Checksum($library_definition['shasum']);
     }
     $library_package->setType('drupal-library');
-
+    if (strpos($library_name, '/') && substr($library_name, 0, 1) !== '/') {
+      $extra = $library_package->getExtra();
+      $extra['installer-name'] = $extra['installer-name'] ?? $library_name;
+      $library_package->setExtra($extra);
+    }
     return $library_package;
   }
 
