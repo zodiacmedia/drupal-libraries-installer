@@ -216,12 +216,11 @@ class Plugin implements PluginInterface, Capable, EventSubscriberInterface {
   protected function processPackage(array $processed_drupal_libraries, array $drupal_libraries, PackageInterface $package) {
     $extra = $package->getExtra();
 
-    if (empty($extra['drupal-libraries']) || !is_array($extra['drupal-libraries'])) {
-      return $processed_drupal_libraries;
-    }
-
     if ($package->getType() === 'project') {
-      foreach ($extra['drupal-libraries-include'] ?? [] as $include) {
+      foreach (['drupal-libraries', 'drupal-libraries-include'] as $key) {
+        $extra[$key] = is_array($extra[$key] ?? NULL) ? $extra[$key] : [];
+      }
+      foreach ($extra['drupal-libraries-include'] as $include) {
         if (!preg_match('/composer.libraries.json$/', $include) || !file_exists($include)) {
           continue;
         }
@@ -237,6 +236,10 @@ class Plugin implements PluginInterface, Capable, EventSubscriberInterface {
           }
         }
       }
+    }
+
+    if (empty($extra['drupal-libraries']) || !is_array($extra['drupal-libraries'])) {
+      return $processed_drupal_libraries;
     }
 
     // Install each library.
