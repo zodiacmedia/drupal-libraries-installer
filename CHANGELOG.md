@@ -1,6 +1,9 @@
 2.x.x / xxxx-xx-xx
 ========================
-* Add support for PHP 8.4 - use nullable type declarations.
+
+2.0.0 / 2025-08-08
+========================
+* [#9](https://github.com/zodiacmedia/drupal-libraries-installer/issues/9) - Add support for PHP 8.4 - use nullable type declarations.
 
 1.6.0 / 2022-11-19
 ========================
