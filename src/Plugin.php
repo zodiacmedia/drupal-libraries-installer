@@ -82,7 +82,7 @@ class Plugin implements PluginInterface, Capable, EventSubscriberInterface {
    * @param \Composer\Util\Filesystem|null $filesystem
    *   The filesystem utility helper.
    */
-  public function activate(Composer $composer, IOInterface $io, Filesystem $filesystem = NULL) {
+  public function activate(Composer $composer, IOInterface $io, ?Filesystem $filesystem = NULL) {
     $this->composer = $composer;
 
     $this->io = $io;

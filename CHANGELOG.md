@@ -1,5 +1,6 @@
-1.x.x / xxxx-xx-xx
+2.x.x / xxxx-xx-xx
 ========================
+* Add support for PHP 8.4 - use nullable type declarations.
 
 1.6.0 / 2022-11-19
 ========================
