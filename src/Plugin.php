@@ -82,7 +82,7 @@ class Plugin implements PluginInterface, Capable, EventSubscriberInterface {
    * @param \Composer\Util\Filesystem|null $filesystem
    *   The filesystem utility helper.
    */
-  public function activate(Composer $composer, IOInterface $io, ?Filesystem $filesystem = NULL) {
+  public function activate(Composer $composer, IOInterface $io, ?Filesystem $filesystem = NULL): void {
     $this->composer = $composer;
 
     $this->io = $io;
@@ -94,7 +94,7 @@ class Plugin implements PluginInterface, Capable, EventSubscriberInterface {
   /**
    * Instruct the plugin manager to subscribe us to these events.
    */
-  public static function getSubscribedEvents() {
+  public static function getSubscribedEvents(): array {
     return [
       ScriptEvents::POST_INSTALL_CMD => 'install',
       ScriptEvents::POST_UPDATE_CMD => 'install',
@@ -105,7 +105,7 @@ class Plugin implements PluginInterface, Capable, EventSubscriberInterface {
   /**
    * {@inheritDoc}
    */
-  public function getCapabilities() {
+  public function getCapabilities(): array {
     return [
       CommandProvider::class => PluginCommandProvider::class,
     ];
@@ -119,7 +119,7 @@ class Plugin implements PluginInterface, Capable, EventSubscriberInterface {
    *
    * @throws \Exception
    */
-  public function install(Event $event) {
+  public function install(Event $event): void {
     $composer = $event->getComposer();
 
     $installed_json_file_path = $this->getInstalledJsonPath();
@@ -329,38 +329,29 @@ class Plugin implements PluginInterface, Capable, EventSubscriberInterface {
         // - wasn't in the lock file.
         // - doesn't match what is in the lock file.
         // - doesn't exist on disk.
-        $download_result = $this->downloadManager->download($library_package, $install_path);
-        if ($download_result instanceof PromiseInterface) {
-          // https://github.com/composer/composer/issues/9209
-          /* @see \Composer\Util\SyncHelper::downloadAndInstallPackageSync */
-          $download_promises[] = $download_result
-            // Prepare for install.
-            ->then(function () use ($library_package, $install_path) {
-              return $this->downloadManager->prepare('install', $library_package, $install_path);
-            })
-            // Clean up after any download errors.
-            ->then(NULL, function ($e) use ($library_package, $install_path) {
-              $this->composer->getLoop()
-                ->wait([
-                  $this->downloadManager->cleanup('install', $library_package, $install_path),
-                ]);
-              throw $e;
-            });
+        // https://github.com/composer/composer/issues/9209
+        /* @see \Composer\Util\SyncHelper::downloadAndInstallPackageSync */
+        $download_promises[] = $this->downloadManager
+          ->download($library_package, $install_path)
+          // Prepare for install.
+          ->then(function () use ($library_package, $install_path) {
+            return $this->downloadManager->prepare('install', $library_package, $install_path);
+          })
+          // Clean up after any download errors.
+          ->then(NULL, function ($e) use ($library_package, $install_path) {
+            $this->composer->getLoop()
+              ->wait([
+                $this->downloadManager->cleanup('install', $library_package, $install_path),
+              ]);
+            throw $e;
+          });
 
-          // Install after the download resolves.
-          $libraries_to_install[] = [
-            $library_name,
-            $library_package,
-            $install_path,
-          ];
-        }
-        else {
-          // Attempt to install synchronously.
-          $install_result = $this->installPackage($library_package, $install_path, $processed_library);
-          if ($install_result instanceof PromiseInterface) {
-            $install_promises[] = $install_result;
-          }
-        }
+        // Install after the download resolves.
+        $libraries_to_install[] = [
+          $library_name,
+          $library_package,
+          $install_path,
+        ];
       }
     }
 
@@ -371,10 +362,7 @@ class Plugin implements PluginInterface, Capable, EventSubscriberInterface {
 
     foreach ($libraries_to_install as $library_to_install) {
       [$library_name, $library_package, $install_path] = $library_to_install;
-      $install_result = $this->installPackage($library_package, $install_path, $processed_libraries[$library_name]);
-      if ($install_result instanceof PromiseInterface) {
-        $install_promises[] = $install_result;
-      }
+      $install_promises[] = $this->installPackage($library_package, $install_path, $processed_libraries[$library_name]);
     }
 
     if (count($install_promises)) {
@@ -414,8 +402,8 @@ class Plugin implements PluginInterface, Capable, EventSubscriberInterface {
    * @param array $processed_library
    *   The library definition.
    *
-   * @return \React\Promise\PromiseInterface|void
-   *   Returns a promise or void.
+   * @return \React\Promise\PromiseInterface
+   *   Returns a promise that resolves once the package has been installed.
    */
   protected function installPackage(Package $library_package, $install_path, array $processed_library) {
     $ignore_patterns = $processed_library['ignore'];
@@ -493,32 +481,27 @@ class Plugin implements PluginInterface, Capable, EventSubscriberInterface {
       }
     };
 
-    if (version_compare(PluginInterface::PLUGIN_API_VERSION, '2.0', '>=')) {
-      // Install the package after downloading (Composer 2 only).
-      $promise = $this->downloadManager->install($library_package, $install_path);
+    // Install the package after downloading.
+    $promise = $this->downloadManager->install($library_package, $install_path);
 
-      if (!($promise instanceof PromiseInterface)) {
-        // Not a promise, create one that can be cleaned up after.
-        $promise = \React\Promise\resolve();
-      }
-
-      return $promise
-        ->then($process_install)
-        // Clean up after the install.
-        ->then(function () use ($library_package, $install_path) {
-          return $this->downloadManager->cleanup('install', $library_package, $install_path);
-        }, function ($e) use ($library_package, $install_path) {
-          // Clean up after any errors.
-          $this->composer->getLoop()
-            ->wait([
-              $this->downloadManager->cleanup('install', $library_package, $install_path),
-            ]);
-          throw $e;
-        });
+    if (!($promise instanceof PromiseInterface)) {
+      // Not a promise, create one that can be cleaned up after.
+      $promise = \React\Promise\resolve();
     }
 
-    // Execute as normal (Composer v1)
-    return $process_install();
+    return $promise
+      ->then($process_install)
+      // Clean up after the install.
+      ->then(function () use ($library_package, $install_path) {
+        return $this->downloadManager->cleanup('install', $library_package, $install_path);
+      }, function ($e) use ($library_package, $install_path) {
+        // Clean up after any errors.
+        $this->composer->getLoop()
+          ->wait([
+            $this->downloadManager->cleanup('install', $library_package, $install_path),
+          ]);
+        throw $e;
+      });
   }
 
   /**
@@ -609,13 +592,13 @@ class Plugin implements PluginInterface, Capable, EventSubscriberInterface {
   /**
    * {@inheritdoc}
    */
-  public function deactivate(Composer $composer, IOInterface $io) {
+  public function deactivate(Composer $composer, IOInterface $io): void {
   }
 
   /**
    * {@inheritdoc}
    */
-  public function uninstall(Composer $composer, IOInterface $io) {
+  public function uninstall(Composer $composer, IOInterface $io): void {
   }
 
 }

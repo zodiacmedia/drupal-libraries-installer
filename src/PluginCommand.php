@@ -14,7 +14,7 @@ class PluginCommand extends BaseCommand {
   /**
    * {@inheritDoc}
    */
-  protected function configure() {
+  protected function configure(): void {
     $this->setName('install-drupal-libraries');
     $this->setDescription(
       'Download and install the drupal libraries.'
@@ -24,8 +24,8 @@ class PluginCommand extends BaseCommand {
   /**
    * {@inheritDoc}
    */
-  protected function execute(InputInterface $input, OutputInterface $output) {
-    $composer = $this->getComposer();
+  protected function execute(InputInterface $input, OutputInterface $output): int {
+    $composer = $this->requireComposer();
 
     $install_libraries_event = new InstallLibrariesEvent(
       InstallLibrariesEvent::INSTALL_LIBRARIES,

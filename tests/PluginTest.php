@@ -8,10 +8,10 @@ use Composer\Installer\InstallationManager;
 use Composer\IO\IOInterface;
 use Composer\Package\Link;
 use Composer\Package\Package;
-use Composer\Package\RootPackage;
-use Composer\Plugin\PluginInterface;
+use Composer\Package\PackageInterface;
+use Composer\Package\RootPackageInterface;
+use Composer\Repository\InstalledRepositoryInterface;
 use Composer\Repository\RepositoryManager;
-use Composer\Repository\WritableRepositoryInterface;
 use Composer\Script\Event;
 use Composer\Script\ScriptEvents;
 use Composer\Util\Filesystem;
@@ -118,8 +118,6 @@ class PluginTest extends TestCase {
   protected function setUp(): void {
     parent::setUp();
 
-    $composer_2 = version_compare(PluginInterface::PLUGIN_API_VERSION, '2.0', '>=');
-
     $this->downloadedFiles = [];
     $this->removedFiles = [];
 
@@ -133,6 +131,15 @@ class PluginTest extends TestCase {
     $this->downloadManager = $this->createMock(DownloadManager::class);
     $this->downloadManager->method('download')->willReturnCallback(
       [$this, 'downloadManagerDownloadCallback']
+    );
+    $this->downloadManager->method('prepare')->willReturnCallback(
+      [$this, 'downloadManagerPrepareCallback']
+    );
+    $this->downloadManager->method('cleanup')->willReturnCallback(
+      [$this, 'downloadManagerCleanupCallback']
+    );
+    $this->downloadManager->method('install')->willReturnCallback(
+      [$this, 'downloadManagerInstallCallback']
     );
 
     // Create a partial mock, keeping the normalize functionality.
@@ -161,7 +168,7 @@ class PluginTest extends TestCase {
       ->willReturn($this->downloadManager);
 
     $repository_manager = $this->createMock(RepositoryManager::class);
-    $local_repository = $this->createMock(WritableRepositoryInterface::class);
+    $local_repository = $this->createMock(InstalledRepositoryInterface::class);
     $local_repository
       ->method('getCanonicalPackages')
       ->willReturnCallback([$this, 'getCanonicalPackagesCallback']);
@@ -173,14 +180,15 @@ class PluginTest extends TestCase {
       ->method('getRepositoryManager')
       ->willReturn($repository_manager);
 
-    if ($composer_2) {
-      // Add mock for the Composer loop.
-      $loop = $this->createMock(Loop::class);
-      $loop->method('wait');
-      $this->composer
-        ->method('getLoop')
-        ->willReturn($loop);
-    }
+    // Add a mock for the Composer loop. Its wait() is a no-op: the download
+    // manager stubs above return already-resolved promises, so their `then()`
+    // callbacks (including the file processing) run synchronously and there is
+    // nothing left to drive.
+    $loop = $this->createMock(Loop::class);
+    $loop->method('wait');
+    $this->composer
+      ->method('getLoop')
+      ->willReturn($loop);
 
     $this->io = $this->createMock(IOInterface::class);
 
@@ -198,10 +206,40 @@ class PluginTest extends TestCase {
   }
 
   /**
-   * Callback for the DownloadManager's download function.
+   * Callback for the DownloadManager's download method.
+   *
+   * @see \Composer\Downloader\DownloadManager::download()
    */
-  public function downloadManagerDownloadCallback(Package $package, $file) {
-    $this->downloadedFiles[] = $file;
+  public function downloadManagerDownloadCallback(PackageInterface $package, string $targetDir, ?PackageInterface $prevPackage = null) {
+    $this->downloadedFiles[] = $targetDir;
+    return \React\Promise\resolve($targetDir);
+  }
+
+  /**
+   * Callback for the DownloadManager's prepare method.
+   *
+   * @see \Composer\Downloader\DownloadManager::prepare()
+   */
+  public function downloadManagerPrepareCallback(string $type, PackageInterface $package, string $targetDir, ?PackageInterface $prevPackage = null) {
+    return \React\Promise\resolve(NULL);
+  }
+
+  /**
+   * Callback for the DownloadManager's cleanup method.
+   *
+   * @see \Composer\Downloader\DownloadManager::cleanup()
+   */
+  public function downloadManagerCleanupCallback(string $type, PackageInterface $package, string $targetDir, ?PackageInterface $prevPackage = null) {
+    return \React\Promise\resolve(NULL);
+  }
+
+  /**
+   * Callback for the DownloadManager's install method.
+   *
+   * @see \Composer\Downloader\DownloadManager::install()
+   */
+  public function downloadManagerInstallCallback(PackageInterface $package, string $targetDir) {
+    return \React\Promise\resolve(NULL);
   }
 
   /**
@@ -254,6 +292,7 @@ class PluginTest extends TestCase {
   }
 }
 EOL
+  ,
           ],
         ],
       ],
@@ -543,14 +582,14 @@ EOL
   /**
    * Trigger an installation of the specified plugin.
    *
-   * @param \Composer\Package\RootPackage $package
+   * @param \Composer\Package\RootPackageInterface $package
    *   The package instance.
    * @param string $directory
    *   Working directory for composer run.
    *
    * @throws \Exception
    */
-  protected function triggerPlugin(RootPackage $package, $directory) {
+  protected function triggerPlugin(RootPackageInterface $package, $directory) {
     chdir($directory);
     // Return the current package.
     $this->composer->method('getPackage')->willReturn($package);
@@ -593,7 +632,7 @@ EOL
    * @param string $file
    *   The fixture composer.json.
    *
-   * @return \PHPUnit\Framework\MockObject\MockObject|\Composer\Package\RootPackage
+   * @return \PHPUnit\Framework\MockObject\MockObject|\Composer\Package\RootPackageInterface
    *   The root package prophecy instance.
    */
   protected function rootFromJson($file) {
@@ -622,7 +661,7 @@ EOL
       }
     }
 
-    $root_package = $this->createMock(RootPackage::class);
+    $root_package = $this->createMock(RootPackageInterface::class);
     $root_package->method('getRequires')->willReturn($data['require']);
     $root_package->method('getDevRequires')->willReturn($data['require-dev']);
     $root_package->method('getRepositories')->willReturn($data['repositories']);
@@ -720,7 +759,7 @@ EOL
         $json
       );
 
-      $package = $this->createMock(Package::class);
+      $package = $this->createMock(PackageInterface::class);
       $package->expects($this->atLeastOnce())->method('getExtra')->willReturn($data['extra']);
       $package->method('getName')->willReturn($data['name']);
       $return[] = $package;

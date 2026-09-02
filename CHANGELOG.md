@@ -1,5 +1,6 @@
 2.x.x / xxxx-xx-xx
 ========================
+* Drop support for Composer 1 and fix broken tests.
 
 2.0.0 / 2025-08-08
 ========================
@@ -23,10 +24,10 @@
 
   * Fix issue where libraries could not be downloaded on an empty cache, creating an empty folder instead.
 
-    Composer 2 introduces additional steps to [`DownloaderInterface`][composer-2-upgrade], which 
+    Composer 2 introduces additional steps to [`DownloaderInterface`][composer-2-upgrade], which
     needed integration as well as support for resolving the promises properly. [Additional reference][composer-2-download-support].
   * Support parallel library downloads on Composer 2, while keeping existing synchronous download support on Composer 1.
-* Fix issue with the plugin failing early if the plugin package is an `AliasPackage`. 
+* Fix issue with the plugin failing early if the plugin package is an `AliasPackage`.
 
 1.4.0 / 2020-11-23
 ========================
@@ -60,11 +61,11 @@ definition for supporting:
 ========================
 * Add better support for sub-packages.
 
-1.0.1 / 2018-01-25 
+1.0.1 / 2018-01-25
 ========================
 * Relax composer-installers version requirement.
 
-1.0.0 / 2018-01-25 
+1.0.0 / 2018-01-25
 ========================
 * Initial MVP plugin.
 

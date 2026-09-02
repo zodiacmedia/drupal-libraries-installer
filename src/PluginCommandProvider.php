@@ -12,7 +12,7 @@ class PluginCommandProvider implements CommandProvider {
   /**
    * {@inheritDoc}
    */
-  public function getCommands() {
+  public function getCommands(): array {
     return [
       new PluginCommand(),
     ];
