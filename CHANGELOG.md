@@ -1,5 +1,8 @@
 2.x.x / xxxx-xx-xx
 ========================
+
+2.1.0 / 2026-09-02
+========================
 * Drop support for Composer 1 and fix broken tests.
 
 2.0.0 / 2025-08-08
